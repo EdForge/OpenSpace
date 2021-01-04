@@ -4,7 +4,7 @@ local kernels = asset.require('../kernels').PlutoKernels
 
 
 
-[local Hydra = {
+local Hydra = {
   Identifier = "Hydra",
   Parent = transforms.PlutoBarycenter.Identifier,
   Transform = {
@@ -24,7 +24,7 @@ local kernels = asset.require('../kernels').PlutoKernels
   Tag = { "moon_solarSystem", "moon_dwarf", "moon_pluto" },
   GUI = {
     Path = "/Solar System/Dwarf Planets/Pluto"
-  }]
+  }
 }
 
 local HydraTrail = {
