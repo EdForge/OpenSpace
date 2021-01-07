@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_alg_priv.h fe2d81c8819bf9794bce0210098e637565728350 2018-05-06 00:49:51 +0200 Even Rouault $
+ * $Id: gdal_alg_priv.h b982ae87d349217de9d832df29ea4c5bd672bcad 2020-10-28 00:34:26 +0100 Even Rouault $
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes and definitions for various GDAL based algorithms:
@@ -8,7 +8,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2008, Andrey Kiselev <dron@ak4719.spb.edu>
- * Copyright (c) 2010-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2010-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,6 +35,7 @@
 #ifndef DOXYGEN_SKIP
 
 #include "gdal_alg.h"
+#include "ogr_spatialref.h"
 
 CPL_C_START
 
@@ -56,7 +57,10 @@ typedef struct {
     int nYSize;
     int nBands;
     GDALDataType eType;
-    double *padfBurnValue;
+    int nPixelSpace;
+    GSpacing nLineSpace;
+    GSpacing nBandSpace;
+    const double *padfBurnValue;
     GDALBurnValueSrc eBurnValueSource;
     GDALRasterMergeAlg eMergeAlg;
 } GDALRasterizeInfo;
@@ -76,25 +80,28 @@ typedef void (*llScanlineFunc)( void *, int, int, int, double );
 typedef void (*llPointFunc)( void *, int, int, double );
 
 void GDALdllImagePoint( int nRasterXSize, int nRasterYSize,
-                        int nPartCount, int *panPartSize,
-                        double *padfX, double *padfY, double *padfVariant,
+                        int nPartCount, const int *panPartSize,
+                        const double *padfX, const double *padfY,
+                        const double *padfVariant,
                         llPointFunc pfnPointFunc, void *pCBData );
 
 void GDALdllImageLine( int nRasterXSize, int nRasterYSize,
-                       int nPartCount, int *panPartSize,
-                       double *padfX, double *padfY, double *padfVariant,
+                       int nPartCount, const int *panPartSize,
+                       const double *padfX, const double *padfY,
+                       const double *padfVariant,
                        llPointFunc pfnPointFunc, void *pCBData );
 
 void GDALdllImageLineAllTouched( int nRasterXSize, int nRasterYSize,
-                                 int nPartCount, int *panPartSize,
-                                 double *padfX, double *padfY,
-                                 double *padfVariant,
-                                 llPointFunc pfnPointFunc, void *pCBData );
+                                 int nPartCount, const int *panPartSize,
+                                 const double *padfX, const double *padfY,
+                                 const double *padfVariant,
+                                 llPointFunc pfnPointFunc, void *pCBData,
+                                 int bAvoidBurningSamePoints );
 
 void GDALdllImageFilledPolygon( int nRasterXSize, int nRasterYSize,
-                                int nPartCount, int *panPartSize,
-                                double *padfX, double *padfY,
-                                double *padfVariant,
+                                int nPartCount, const int *panPartSize,
+                                const double *padfX, const double *padfY,
+                                const double *padfVariant,
                                 llScanlineFunc pfnScanlineFunc, void *pCBData );
 
 CPL_C_END
@@ -160,6 +167,9 @@ void* GDALCreateTPSTransformerInt( int nGCPCount, const GDAL_GCP *pasGCPList,
 
 void CPL_DLL * GDALCloneTransformer( void *pTransformerArg );
 
+void GDALRefreshGenImgProjTransformer(void* hTransformArg);
+void GDALRefreshApproxTransformer(void* hTransformArg);
+
 /************************************************************************/
 /*      Color table related                                             */
 /************************************************************************/
@@ -216,6 +226,26 @@ struct FloatEqualityTest
 {
     bool operator()(float a, float b) { return GDALFloatEquals(a,b) == TRUE; }
 };
+
+bool GDALComputeAreaOfInterest(OGRSpatialReference* poSRS,
+                               double adfGT[6],
+                               int nXSize,
+                               int nYSize,
+                               double& dfWestLongitudeDeg,
+                               double& dfSouthLatitudeDeg,
+                               double& dfEastLongitudeDeg,
+                               double& dfNorthLatitudeDeg );
+
+bool GDALComputeAreaOfInterest(OGRSpatialReference* poSRS,
+                               double dfX1,
+                               double dfY1,
+                               double dfX2,
+                               double dfY2,
+                               double& dfWestLongitudeDeg,
+                               double& dfSouthLatitudeDeg,
+                               double& dfEastLongitudeDeg,
+                               double& dfNorthLatitudeDeg );
+
 
 #endif /* #ifndef DOXYGEN_SKIP */
 

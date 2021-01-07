@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_api.h cd620a45272533ba0e9a819993a5768ca9764f43 2018-04-11 08:13:21 +0200 Juergen E. Fischer $
+ * $Id: ogr_api.h 4fb0702109acae09624f7ff9436ddcd456cb09e3 2020-07-01 19:14:52 +1000 Nyall Dawson $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  C API for OGR Geometry, Feature, Layers, DataSource and drivers.
@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2002, Frank Warmerdam
- * Copyright (c) 2008-2013, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2013, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -66,6 +66,7 @@ typedef void *OGRGeometryH;
 #define DEFINED_OGRSpatialReferenceH
 /*! @endcond */
 
+#ifndef DOXYGEN_XML
 #ifdef DEBUG
 typedef struct OGRSpatialReferenceHS *OGRSpatialReferenceH;
 typedef struct OGRCoordinateTransformationHS *OGRCoordinateTransformationH;
@@ -74,6 +75,7 @@ typedef struct OGRCoordinateTransformationHS *OGRCoordinateTransformationH;
 typedef void *OGRSpatialReferenceH;
 /** Opaque type for a coordinate transformation object */
 typedef void *OGRCoordinateTransformationH;
+#endif
 #endif
 
 #endif /* DEFINED_OGRSpatialReferenceH */
@@ -105,6 +107,7 @@ OGRGeometryH CPL_DLL OGR_G_ForceToMultiLineString( OGRGeometryH ) CPL_WARN_UNUSE
 OGRGeometryH CPL_DLL OGR_G_ForceTo( OGRGeometryH hGeom,
                                     OGRwkbGeometryType eTargetType,
                                     char** papszOptions ) CPL_WARN_UNUSED_RESULT;
+OGRGeometryH CPL_DLL OGR_G_RemoveLowerDimensionSubGeoms( const OGRGeometryH hGeom ) CPL_WARN_UNUSED_RESULT;
 
 int    CPL_DLL OGR_G_GetDimension( OGRGeometryH );
 int    CPL_DLL OGR_G_GetCoordinateDimension( OGRGeometryH );
@@ -144,12 +147,21 @@ char   CPL_DLL *OGR_G_ExportToJson( OGRGeometryH ) CPL_WARN_UNUSED_RESULT;
 char   CPL_DLL *OGR_G_ExportToJsonEx( OGRGeometryH, char** papszOptions ) CPL_WARN_UNUSED_RESULT;
 /** Create a OGR geometry from a GeoJSON geometry object */
 OGRGeometryH CPL_DLL OGR_G_CreateGeometryFromJson( const char* ) CPL_WARN_UNUSED_RESULT;
+/** Create a OGR geometry from a ESRI JSON geometry object */
+OGRGeometryH CPL_DLL OGR_G_CreateGeometryFromEsriJson( const char* ) CPL_WARN_UNUSED_RESULT;
 
 void   CPL_DLL OGR_G_AssignSpatialReference( OGRGeometryH,
                                              OGRSpatialReferenceH );
 OGRSpatialReferenceH CPL_DLL OGR_G_GetSpatialReference( OGRGeometryH );
 OGRErr CPL_DLL OGR_G_Transform( OGRGeometryH, OGRCoordinateTransformationH );
 OGRErr CPL_DLL OGR_G_TransformTo( OGRGeometryH, OGRSpatialReferenceH );
+
+/** Opaque type for a geometry transformer. */
+typedef struct OGRGeomTransformer* OGRGeomTransformerH;
+OGRGeomTransformerH CPL_DLL OGR_GeomTransformer_Create( OGRCoordinateTransformationH,
+                                                        CSLConstList papszOptions ) CPL_WARN_UNUSED_RESULT;
+OGRGeometryH CPL_DLL OGR_GeomTransformer_Transform(OGRGeomTransformerH hTransformer, OGRGeometryH hGeom ) CPL_WARN_UNUSED_RESULT;
+void CPL_DLL OGR_GeomTransformer_Destroy(OGRGeomTransformerH hTransformer);
 
 OGRGeometryH CPL_DLL OGR_G_Simplify( OGRGeometryH hThis, double tolerance ) CPL_WARN_UNUSED_RESULT;
 OGRGeometryH CPL_DLL OGR_G_SimplifyPreserveTopology( OGRGeometryH hThis, double tolerance ) CPL_WARN_UNUSED_RESULT;
@@ -190,6 +202,7 @@ void   CPL_DLL OGR_G_Empty( OGRGeometryH );
 int    CPL_DLL OGR_G_IsEmpty( OGRGeometryH );
 int    CPL_DLL OGR_G_IsValid( OGRGeometryH );
 /*char    CPL_DLL *OGR_G_IsValidReason( OGRGeometryH );*/
+OGRGeometryH CPL_DLL OGR_G_MakeValid( OGRGeometryH ) CPL_WARN_UNUSED_RESULT;
 int    CPL_DLL OGR_G_IsSimple( OGRGeometryH );
 int    CPL_DLL OGR_G_IsRing( OGRGeometryH );
 
@@ -313,6 +326,8 @@ void   CPL_DLL OGR_Fld_Destroy( OGRFieldDefnH );
 
 void   CPL_DLL OGR_Fld_SetName( OGRFieldDefnH, const char * );
 const char CPL_DLL *OGR_Fld_GetNameRef( OGRFieldDefnH );
+void   CPL_DLL OGR_Fld_SetAlternativeName( OGRFieldDefnH, const char * );
+const char CPL_DLL *OGR_Fld_GetAlternativeNameRef( OGRFieldDefnH );
 OGRFieldType CPL_DLL OGR_Fld_GetType( OGRFieldDefnH );
 void   CPL_DLL OGR_Fld_SetType( OGRFieldDefnH, OGRFieldType );
 OGRFieldSubType CPL_DLL OGR_Fld_GetSubType( OGRFieldDefnH );
@@ -329,6 +344,8 @@ int    CPL_DLL OGR_Fld_IsIgnored( OGRFieldDefnH hDefn );
 void   CPL_DLL OGR_Fld_SetIgnored( OGRFieldDefnH hDefn, int );
 int    CPL_DLL OGR_Fld_IsNullable( OGRFieldDefnH hDefn );
 void   CPL_DLL OGR_Fld_SetNullable( OGRFieldDefnH hDefn, int );
+int    CPL_DLL OGR_Fld_IsUnique( OGRFieldDefnH hDefn );
+void   CPL_DLL OGR_Fld_SetUnique( OGRFieldDefnH hDefn, int );
 const char CPL_DLL *OGR_Fld_GetDefault( OGRFieldDefnH hDefn );
 void   CPL_DLL OGR_Fld_SetDefault( OGRFieldDefnH hDefn, const char* );
 int    CPL_DLL OGR_Fld_IsDefaultDriverSpecific( OGRFieldDefnH hDefn );
@@ -449,7 +466,7 @@ void   CPL_DLL OGR_F_SetFieldInteger64List( OGRFeatureH, int, int, const GIntBig
 void   CPL_DLL OGR_F_SetFieldDoubleList( OGRFeatureH, int, int, const double * );
 void   CPL_DLL OGR_F_SetFieldStringList( OGRFeatureH, int, CSLConstList );
 void   CPL_DLL OGR_F_SetFieldRaw( OGRFeatureH, int, OGRField * );
-void   CPL_DLL OGR_F_SetFieldBinary( OGRFeatureH, int, int, GByte * );
+void   CPL_DLL OGR_F_SetFieldBinary( OGRFeatureH, int, int, const void * );
 void   CPL_DLL OGR_F_SetFieldDateTime( OGRFeatureH, int,
                                        int, int, int, int, int, int, int );
 void   CPL_DLL OGR_F_SetFieldDateTimeEx( OGRFeatureH, int,

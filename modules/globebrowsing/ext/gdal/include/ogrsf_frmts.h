@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsf_frmts.h 4db9ec884a59751d80c7482f9f3d621ef3c640f6 2018-12-13 11:54:36 +0300 Dmitry Baryshnikov $
+ * $Id: ogrsf_frmts.h bca0a3e9973959f19849febb0281fa9ecf0ad51f 2020-09-02 20:47:32 +0200 Even Rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes related to format registration, and file opening.
@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 1999,  Les Technologies SoftMap Inc.
- * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -291,6 +291,55 @@ inline OGRLayer::FeatureIterator begin(OGRLayer* poLayer) { return poLayer->begi
  */
 inline OGRLayer::FeatureIterator end(OGRLayer* poLayer) { return poLayer->end(); }
 
+/** Unique pointer type for OGRLayer.
+ * @since GDAL 3.2
+ */
+using OGRLayerUniquePtr = std::unique_ptr<OGRLayer>;
+
+/************************************************************************/
+/*                     OGRGetNextFeatureThroughRaw                      */
+/************************************************************************/
+
+/** Template class offering a GetNextFeature() implementation relying on
+ * GetNextRawFeature()
+ *
+ * @since GDAL 3.2
+ */
+template<class BaseLayer> class OGRGetNextFeatureThroughRaw
+{
+public:
+
+    /** Implement OGRLayer::GetNextFeature(), relying on BaseLayer::GetNextRawFeature() */
+    OGRFeature* GetNextFeature()
+    {
+        const auto poThis = static_cast<BaseLayer*>(this);
+        while( true )
+        {
+            OGRFeature *poFeature = poThis->GetNextRawFeature();
+            if (poFeature == nullptr)
+                return nullptr;
+
+            if((poThis->m_poFilterGeom == nullptr
+                || poThis->FilterGeometry( poFeature->GetGeometryRef() ) )
+            && (poThis->m_poAttrQuery == nullptr
+                || poThis->m_poAttrQuery->Evaluate( poFeature )) )
+            {
+                return poFeature;
+            }
+            else
+                delete poFeature;
+        }
+    }
+};
+
+/** Utility macro to define GetNextFeature() through GetNextRawFeature() */
+#define DEFINE_GET_NEXT_FEATURE_THROUGH_RAW(BaseLayer) \
+    private: \
+        friend class OGRGetNextFeatureThroughRaw<BaseLayer>; \
+    public: \
+        OGRFeature* GetNextFeature() override { return OGRGetNextFeatureThroughRaw<BaseLayer>::GetNextFeature(); }
+
+
 /************************************************************************/
 /*                            OGRDataSource                             */
 /************************************************************************/
@@ -446,6 +495,7 @@ void CPL_DLL RegisterOGRDGN();
 void CPL_DLL RegisterOGRGML();
 void CPL_DLL RegisterOGRLIBKML();
 void CPL_DLL RegisterOGRKML();
+void CPL_DLL RegisterOGRFlatGeobuf();
 void CPL_DLL RegisterOGRGeoJSON();
 void CPL_DLL RegisterOGRGeoJSONSeq();
 void CPL_DLL RegisterOGRESRIJSON();
@@ -466,7 +516,6 @@ void CPL_DLL RegisterOGRDXF();
 void CPL_DLL RegisterOGRCAD();
 void CPL_DLL RegisterOGRDWG();
 void CPL_DLL RegisterOGRDGNV8();
-void CPL_DLL RegisterOGRSDE();
 void CPL_DLL RegisterOGRIDB();
 void CPL_DLL RegisterOGRGMT();
 void CPL_DLL RegisterOGRBNA();
@@ -485,14 +534,13 @@ void CPL_DLL RegisterOGRSUA();
 void CPL_DLL RegisterOGROpenAir();
 void CPL_DLL RegisterOGRPDS();
 void CPL_DLL RegisterOGRWFS();
-void CPL_DLL RegisterOGRWFS3();
+void CPL_DLL RegisterOGROAPIF();
 void CPL_DLL RegisterOGRSOSI();
 void CPL_DLL RegisterOGRHTF();
 void CPL_DLL RegisterOGRAeronavFAA();
 void CPL_DLL RegisterOGRGeomedia();
 void CPL_DLL RegisterOGRMDB();
 void CPL_DLL RegisterOGREDIGEO();
-void CPL_DLL RegisterOGRGFT();
 void CPL_DLL RegisterOGRSVG();
 void CPL_DLL RegisterOGRCouchDB();
 void CPL_DLL RegisterOGRCloudant();
@@ -514,11 +562,14 @@ void CPL_DLL RegisterOGRSelafin();
 void CPL_DLL RegisterOGRJML();
 void CPL_DLL RegisterOGRPLSCENES();
 void CPL_DLL RegisterOGRCSW();
+void CPL_DLL RegisterOGRMongoDBv3();
 void CPL_DLL RegisterOGRMongoDB();
 void CPL_DLL RegisterOGRVDV();
 void CPL_DLL RegisterOGRGMLAS();
 void CPL_DLL RegisterOGRMVT();
 void CPL_DLL RegisterOGRNGW();
+void CPL_DLL RegisterOGRMapML();
+void CPL_DLL RegisterOGRLVBAG();
 // @endcond
 
 CPL_C_END

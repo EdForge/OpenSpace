@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.h d16ecc80707f9c7097a11bfe47c8403bb9df310f 2018-07-27 20:14:48 -0700 piyush.agram@jpl.nasa.gov $
+ * $Id: gdalwarper.h 58843108fdd2c6fcd8c8391f370989c937c877dc 2020-05-19 22:26:59 +0200 Martin Dobias $
  *
  * Project:  GDAL High Performance Warper
  * Purpose:  Prototypes, and definitions for warping related work.
@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2003, Frank Warmerdam
- * Copyright (c) 2009-2012, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2009-2012, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -53,14 +53,15 @@ typedef enum {
   /*! Cubic Convolution Approximation (4x4 kernel) */  GRA_Cubic=2,
   /*! Cubic B-Spline Approximation (4x4 kernel) */     GRA_CubicSpline=3,
   /*! Lanczos windowed sinc interpolation (6x6 kernel) */ GRA_Lanczos=4,
-  /*! Average (computes the average of all non-NODATA contributing pixels) */ GRA_Average=5,
+  /*! Average (computes the weighted average of all non-NODATA contributing pixels) */ GRA_Average=5,
   /*! Mode (selects the value which appears most often of all the sampled points) */ GRA_Mode=6,
   /*  GRA_Gauss=7 reserved. */
   /*! Max (selects maximum of all non-NODATA contributing pixels) */ GRA_Max=8,
   /*! Min (selects minimum of all non-NODATA contributing pixels) */ GRA_Min=9,
   /*! Med (selects median of all non-NODATA contributing pixels) */ GRA_Med=10,
   /*! Q1 (selects first quartile of all non-NODATA contributing pixels) */ GRA_Q1=11,
-  /*! Q3 (selects third quartile of all non-NODATA contributing pixels) */ GRA_Q3=12
+  /*! Q3 (selects third quartile of all non-NODATA contributing pixels) */ GRA_Q3=12,
+  /*! Sum (computes the weighed sum of all non-NODATA contributing pixels). Added in GDAL 3.1 */ GRA_Sum=13
 } GDALResampleAlg;
 
 /*! GWKAverageOrMode Algorithm */
@@ -70,7 +71,8 @@ typedef enum {
     /*! Mode of GDT_Byte, GDT_UInt16, or GDT_Int16 */ GWKAOM_Imode=3,
     /*! Maximum */ GWKAOM_Max=4,
     /*! Minimum */ GWKAOM_Min=5,
-    /*! Quantile */ GWKAOM_Quant=6
+    /*! Quantile */ GWKAOM_Quant=6,
+    /*! Sum */ GWKAOM_Sum=7
 } GWKAverageOrModeAlg;
 
 /*! @cond Doxygen_Suppress */
@@ -285,6 +287,13 @@ GDALAutoCreateWarpedVRT( GDALDatasetH hSrcDS,
                          const char *pszSrcWKT, const char *pszDstWKT,
                          GDALResampleAlg eResampleAlg,
                          double dfMaxError, const GDALWarpOptions *psOptions );
+
+GDALDatasetH CPL_DLL CPL_STDCALL
+GDALAutoCreateWarpedVRTEx( GDALDatasetH hSrcDS,
+                           const char *pszSrcWKT, const char *pszDstWKT,
+                           GDALResampleAlg eResampleAlg,
+                           double dfMaxError, const GDALWarpOptions *psOptions,
+                           CSLConstList papszTransformerOptions );
 
 GDALDatasetH CPL_DLL CPL_STDCALL
 GDALCreateWarpedVRT( GDALDatasetH hSrcDS,

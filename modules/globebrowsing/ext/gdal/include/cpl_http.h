@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_http.h 15748d502551e341d73d0e388eb9f2e5209aa902 2018-10-06 19:05:17 +0200 Denis Rykov $
+ * $Id: cpl_http.h 5bf28e3bebd1032c4c8f50564d077f95cdf897d3 2020-09-30 14:07:46 +0200 Even Rouault $
  *
  * Project:  Common Portability Library
  * Purpose:  Function wrapper for libcurl HTTP access.
@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2006, Frank Warmerdam
- * Copyright (c) 2009, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2009, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -43,8 +43,13 @@
  */
 
 /*! @cond Doxygen_Suppress */
+#ifndef CPL_HTTP_MAX_RETRY
 #define CPL_HTTP_MAX_RETRY      0
+#endif
+
+#ifndef CPL_HTTP_RETRY_DELAY
 #define CPL_HTTP_RETRY_DELAY    30.0
+#endif
 /*! @endcond */
 
 CPL_C_START
@@ -109,6 +114,39 @@ void CPL_DLL  CPLHTTPDestroyMultiResult( CPLHTTPResult **papsResults, int nCount
 int  CPL_DLL  CPLHTTPParseMultipartMime( CPLHTTPResult *psResult );
 
 /* -------------------------------------------------------------------- */
+/* To install an alternate network layer to the default Curl one        */
+/* -------------------------------------------------------------------- */
+/** Callback function to process network requests.
+ *
+ * If CLOSE_PERSISTENT is found in papszOptions, no network request should be
+ * issued, but a dummy non-null CPLHTTPResult* should be returned by the callback.
+ *
+ * Its first arguments are the same as CPLHTTPFetchEx()
+ * @param pszURL See CPLHTTPFetchEx()
+ * @param papszOptions See CPLHTTPFetchEx()
+ * @param pfnProgress See CPLHTTPFetchEx()
+ * @param pProgressArg See CPLHTTPFetchEx()
+ * @param pfnWrite See CPLHTTPFetchEx()
+ * @param pWriteArg See CPLHTTPFetchEx()
+ * @param pUserData user data value that was passed during CPLHTTPPushFetchCallback()
+ * @return nullptr if the request cannot be processed, in which case the previous handler will be used.
+ */
+typedef CPLHTTPResult* (*CPLHTTPFetchCallbackFunc)( const char *pszURL,
+                                                    CSLConstList papszOptions,
+                                                    GDALProgressFunc pfnProgress,
+                                                    void *pProgressArg,
+                                                    CPLHTTPFetchWriteFunc pfnWrite,
+                                                    void *pWriteArg,
+                                                    void* pUserData );
+
+void CPL_DLL CPLHTTPSetFetchCallback( CPLHTTPFetchCallbackFunc pFunc,
+                                      void* pUserData );
+
+int CPL_DLL  CPLHTTPPushFetchCallback( CPLHTTPFetchCallbackFunc pFunc,
+                                       void* pUserData );
+int CPL_DLL  CPLHTTPPopFetchCallback(void);
+
+/* -------------------------------------------------------------------- */
 /*      The following is related to OAuth2 authorization around         */
 /*      google services like fusion tables, and potentially others      */
 /*      in the future.  Code in cpl_google_oauth2.cpp.                  */
@@ -138,7 +176,8 @@ CPL_C_END
 // Not sure if this belong here, used in cpl_http.cpp, cpl_vsil_curl.cpp and frmts/wms/gdalhttp.cpp
 void* CPLHTTPSetOptions(void *pcurl, const char *pszURL, const char * const* papszOptions);
 char** CPLHTTPGetOptionsFromEnv();
-double CPLHTTPGetNewRetryDelay(int response_code, double dfOldDelay, const char* pszErrBuf);
+double CPLHTTPGetNewRetryDelay(int response_code, double dfOldDelay,
+                               const char* pszErrBuf, const char* pszCurlError);
 void* CPLHTTPIgnoreSigPipe();
 void CPLHTTPRestoreSigPipeHandler(void* old_handler);
 bool CPLMultiPerformWait(void* hCurlMultiHandle, int& repeats);

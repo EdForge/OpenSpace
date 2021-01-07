@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_frmts.h 91d70b77cc330670d972f2317dbdf3a5b424f845 2018-10-15 00:43:04 +0200 Even Rouault $
+ * $Id: gdal_frmts.h ea7e27cb335aea69decb920a492723aebf3eaf43 2020-09-24 14:51:54 +0200 Even Rouault $
  *
  * Project:  GDAL
  * Purpose:  Prototypes for all format specific driver initialization.
@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2001, Frank Warmerdam
- * Copyright (c) 2007-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2007-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -39,6 +39,7 @@ void CPL_DLL GDALRegister_GXF(void);
 void CPL_DLL GDALRegister_HFA(void);
 void CPL_DLL GDALRegister_AAIGrid(void);
 void CPL_DLL GDALRegister_GRASSASCIIGrid(void);
+void CPL_DLL GDALRegister_ISG(void);
 void CPL_DLL GDALRegister_AIGrid(void);
 // void CPL_DLL GDALRegister_AIGrid2(void);
 void CPL_DLL GDALRegister_CEOS(void);
@@ -125,7 +126,6 @@ void CPL_DLL GDALRegister_Terragen(void);
 void CPL_DLL GDALRegister_WCS(void);
 void CPL_DLL GDALRegister_WMS(void);
 void CPL_DLL GDALRegister_HTTP(void);
-void CPL_DLL GDALRegister_SDE(void);
 void CPL_DLL GDALRegister_GSAG(void);
 void CPL_DLL GDALRegister_GSBG(void);
 void CPL_DLL GDALRegister_GS7BG(void);
@@ -144,6 +144,7 @@ void CPL_DLL GDALRegister_BLX(void);
 void CPL_DLL GDALRegister_LCP(void);
 void CPL_DLL GDALRegister_TMS(void);
 void CPL_DLL GDALRegister_EIR(void);
+void CPL_DLL GDALRegister_ESRIC(void);
 void CPL_DLL GDALRegister_GEOR(void);
 void CPL_DLL GDALRegister_TIL(void);
 void CPL_DLL GDALRegister_R(void);
@@ -198,6 +199,14 @@ void CPL_DLL GDALRegister_EEDA(void);
 void CPL_DLL GDALRegister_SIGDEM(void);
 void CPL_DLL GDALRegister_BYN(void);
 void CPL_DLL GDALRegister_IGNFHeightASCIIGrid(void);
+void CPL_DLL GDALRegister_TileDB(void);
+void CPL_DLL GDALRegister_DAAS(void);
+void CPL_DLL GDALRegister_COG(void);
+void CPL_DLL GDALRegister_RDB(void);
+void CPL_DLL GDALRegister_EXR(void);
+void CPL_DLL GDALRegister_HEIF(void);
+void CPL_DLL GDALRegister_TGA(void);
+void CPL_DLL GDALRegister_OGCAPI(void);
 CPL_C_END
 
 #endif /* ndef GDAL_FRMTS_H_INCLUDED */

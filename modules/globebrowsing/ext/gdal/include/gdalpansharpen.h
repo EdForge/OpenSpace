@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalpansharpen.h fe2d81c8819bf9794bce0210098e637565728350 2018-05-06 00:49:51 +0200 Even Rouault $
+ * $Id: gdalpansharpen.h 8ca42e1b9c2e54b75d35e49885df9789a2643aa4 2020-05-17 21:43:40 +0200 Even Rouault $
  *
  * Project:  GDAL Pansharpening module
  * Purpose:  Prototypes, and definitions for pansharpening related work.
@@ -60,7 +60,7 @@ typedef struct
     /*! Resampling algorithm to upsample spectral bands to pan band resolution. */
     GDALRIOResampleAlg   eResampleAlg;
 
-    /*! Bit depth of the spectral bands. Can be let to 0 for default behaviour. */
+    /*! Bit depth of the spectral bands. Can be let to 0 for default behavior. */
     int                  nBitDepth;
 
     /*! Number of weight coefficients in padfWeights. */
@@ -147,8 +147,8 @@ typedef struct
     const void* pPanBuffer;
     const void* pUpsampledSpectralBuffer;
     void* pDataBuf;
-    int nValues;
-    int nBandValues;
+    size_t nValues;
+    size_t nBandValues;
     GUInt32 nMaxValue;
 
 #ifdef DEBUG_TIMING
@@ -204,15 +204,15 @@ class GDALPansharpenOperation
                                                      const WorkDataType* pPanBuffer,
                                                      const WorkDataType* pUpsampledSpectralBuffer,
                                                      OutDataType* pDataBuf,
-                                                     int nValues,
-                                                     int nBandValues,
+                                                     size_t nValues,
+                                                     size_t nBandValues,
                                                      WorkDataType nMaxValue) const;
         template<class WorkDataType, class OutDataType, int bHasBitDepth> void WeightedBrovey3(
                                                      const WorkDataType* pPanBuffer,
                                                      const WorkDataType* pUpsampledSpectralBuffer,
                                                      OutDataType* pDataBuf,
-                                                     int nValues,
-                                                     int nBandValues,
+                                                     size_t nValues,
+                                                     size_t nBandValues,
                                                      WorkDataType nMaxValue) const;
 
         // cppcheck-suppress functionStatic
@@ -220,16 +220,16 @@ class GDALPansharpenOperation
                                                      const WorkDataType* pPanBuffer,
                                                      const WorkDataType* pUpsampledSpectralBuffer,
                                                      OutDataType* pDataBuf,
-                                                     int nValues,
-                                                     int nBandValues,
+                                                     size_t nValues,
+                                                     size_t nBandValues,
                                                      WorkDataType nMaxValue) const;
         template<class WorkDataType> CPLErr WeightedBrovey(
                                                      const WorkDataType* pPanBuffer,
                                                      const WorkDataType* pUpsampledSpectralBuffer,
                                                      void *pDataBuf,
                                                      GDALDataType eBufDataType,
-                                                     int nValues,
-                                                     int nBandValues,
+                                                     size_t nValues,
+                                                     size_t nBandValues,
                                                      WorkDataType nMaxValue) const;
 
         // cppcheck-suppress functionStatic
@@ -238,22 +238,22 @@ class GDALPansharpenOperation
                                                      const WorkDataType* pUpsampledSpectralBuffer,
                                                      void *pDataBuf,
                                                      GDALDataType eBufDataType,
-                                                     int nValues,
-                                                     int nBandValues) const;
+                                                     size_t nValues,
+                                                     size_t nBandValues) const;
         template<class T> void WeightedBroveyPositiveWeights(
                                                      const T* pPanBuffer,
                                                      const T* pUpsampledSpectralBuffer,
                                                      T* pDataBuf,
-                                                     int nValues,
-                                                     int nBandValues,
+                                                     size_t nValues,
+                                                     size_t nBandValues,
                                                      T nMaxValue) const;
 
-        template<class T, int NINPUT, int NOUTPUT> int WeightedBroveyPositiveWeightsInternal(
+        template<class T, int NINPUT, int NOUTPUT> size_t WeightedBroveyPositiveWeightsInternal(
                                                      const T* pPanBuffer,
                                                      const T* pUpsampledSpectralBuffer,
                                                      T* pDataBuf,
-                                                     int nValues,
-                                                     int nBandValues,
+                                                     size_t nValues,
+                                                     size_t nBandValues,
                                                      T nMaxValue) const;
 
         // cppcheck-suppress unusedPrivateFunction
@@ -261,16 +261,17 @@ class GDALPansharpenOperation
                                                      const T* pPanBuffer,
                                                      const T* pUpsampledSpectralBuffer,
                                                      T* pDataBuf,
-                                                     int nValues,
-                                                     int nBandValues,
+                                                     size_t nValues,
+                                                     size_t nBandValues,
                                                      T nMaxValue ) const;
 
+        // cppcheck-suppress functionStatic
         CPLErr PansharpenChunk( GDALDataType eWorkDataType, GDALDataType eBufDataType,
                                                      const void* pPanBuffer,
                                                      const void* pUpsampledSpectralBuffer,
                                                      void* pDataBuf,
-                                                     int nValues,
-                                                     int nBandValues,
+                                                     size_t nValues,
+                                                     size_t nBandValues,
                                                      GUInt32 nMaxValue) const;
     public:
                              GDALPansharpenOperation();

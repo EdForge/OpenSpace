@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalsse_priv.h e37e476c4cf8f4b0df8995e0d95d5d672fca1a9b 2018-05-05 16:54:18 +0200 Even Rouault $
+ * $Id: gdalsse_priv.h 60827fdad75b8bd6178c450fcc15ca6abdd467f0 2019-04-01 17:20:03 +0200 Raul Marin $
  *
  * Project:  GDAL
  * Purpose:  SSE2 helper
@@ -760,7 +760,7 @@ class XMMReg4Double
   public:
     __m256d ymm;
 
-    XMMReg4Double() {}
+    XMMReg4Double(): ymm(_mm256_setzero_pd()) {}
     XMMReg4Double(const XMMReg4Double& other) : ymm(other.ymm) {}
 
     static inline XMMReg4Double Zero()

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_string.h e12a0fc61edef91a039e13c7baff2ce58288a552 2018-08-10 00:53:29 +0200 Juergen E. Fischer $
+ * $Id: cpl_string.h 237cce44e47cca3290bf053bbfa153856575017e 2019-08-17 15:01:52 +0200 Even Rouault $
  *
  * Name:     cpl_string.h
  * Project:  CPL - Common Portability Library
@@ -8,7 +8,7 @@
  *
  **********************************************************************
  * Copyright (c) 1998, Daniel Morissette
- * Copyright (c) 2008-2014, Even Rouault <even dot rouault at mines-paris dot org>
+ * Copyright (c) 2008-2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -292,6 +292,9 @@ char CPL_DLL *CPLForceToASCII(
     const char* pabyData, int nLen,
     char chReplacementChar ) CPL_WARN_UNUSED_RESULT;
 int CPL_DLL CPLStrlenUTF8( const char *pszUTF8Str );
+int CPL_DLL CPLCanRecode(
+    const char *pszTestStr, const char *pszSrcEncoding,
+    const char *pszDstEncoding) CPL_WARN_UNUSED_RESULT;
 CPL_C_END
 
 /************************************************************************/
@@ -498,6 +501,8 @@ class CPL_DLL CPLStringList
     CPLStringList &operator=(const CPLStringList& oOther);
     /** Assignment operator */
     CPLStringList &operator=(CSLConstList papszListIn);
+    /** Move assignment operator */
+    CPLStringList &operator=(CPLStringList&& oOther);
 
     /** Return string at specified index */
     char * operator[](int i);
@@ -533,7 +538,7 @@ class CPL_DLL CPLStringList
 #include <memory>
 
 /*! @cond Doxygen_Suppress */
-struct CSLDestroyReleaser
+struct CPL_DLL CSLDestroyReleaser
 {
     void operator()(char** papszStr) const { CSLDestroy(papszStr); }
 };
@@ -541,6 +546,16 @@ struct CSLDestroyReleaser
 
 /** Unique pointer type to use with CSL functions returning a char** */
 using CSLUniquePtr = std::unique_ptr< char*, CSLDestroyReleaser>;
+
+/*! @cond Doxygen_Suppress */
+struct CPL_DLL CPLFreeReleaser
+{
+    void operator()(void* p) const { CPLFree(p); }
+};
+/*! @endcond */
+
+/** Unique pointer type to use with functions returning a char* to release with CPLFree */
+using CPLCharUniquePtr = std::unique_ptr<char, CPLFreeReleaser>;
 
 #endif
 

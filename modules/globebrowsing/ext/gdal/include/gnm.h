@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gnm.h 5524ee5324f7bd364d391d842a6488c90c0186a7 2018-04-02 16:20:13 +0200 Even Rouault $
+ * $Id: gnm.h 2854064296f013181ac011aa4f8473566a46fd4a 2019-08-15 15:36:49 +0200 Even Rouault $
  *
  * Project:  GDAL/OGR Geography Network support (Geographic Network Model)
  * Purpose:  GNM general public declarations.
@@ -78,7 +78,9 @@ public:
     virtual ~GNMNetwork();
 
     // GDALDataset Interface
-    virtual const char *GetProjectionRef(void) override;
+    const OGRSpatialReference* GetSpatialRef() const override {
+        return GetSpatialRefFromOldGetProjectionRef();
+    }
     virtual char      **GetFileList(void) override;
 
     // GNMNetwork Interface
@@ -168,6 +170,10 @@ protected:
      */
     virtual int CheckNetworkExist( const char* pszFilename,
                                    char** papszOptions ) = 0;
+
+//! @cond Doxygen_Suppress
+    const char *_GetProjectionRef(void) override;
+//! @endcond
 
 protected:
 //! @cond Doxygen_Suppress
@@ -631,9 +637,12 @@ typedef enum
  * @since GDAL 2.1
  */
 
-// cppcheck-suppress copyCtorAndEqOperator
 class CPL_DLL GNMRule
 {
+    // to hopefully please Coverity Scan which complains about missing
+    // move assignment operator for performance reasons
+    GNMRule& operator==(GNMRule&&) = delete;
+
 public:
     /** Constructor */
     GNMRule();
@@ -643,6 +652,10 @@ public:
     explicit GNMRule(const char* pszRule);
     /** Constructor */
     GNMRule(const GNMRule &oRule);
+
+    /** Assignment operator */
+    GNMRule& operator=(const GNMRule&) = default;
+
     virtual ~GNMRule();
     /**
      * @brief  This function indicate if rule string was parsed successfully

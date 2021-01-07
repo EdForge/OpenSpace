@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_pam.h e37e476c4cf8f4b0df8995e0d95d5d672fca1a9b 2018-05-05 16:54:18 +0200 Even Rouault $
+ * $Id: gdal_pam.h 2e6733101e6356653e8c999cb7fe808abc22ed11 2020-08-11 14:57:51 +0200 Even Rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Declaration for Peristable Auxiliary Metadata classes.
@@ -33,6 +33,7 @@
 //! @cond Doxygen_Suppress
 
 #include "gdal_priv.h"
+#include <map>
 
 class GDALPamRasterBand;
 
@@ -89,20 +90,31 @@ class GDALDatasetPamInfo
 public:
     char        *pszPamFilename = nullptr;
 
-    char        *pszProjection = nullptr;
+    OGRSpatialReference* poSRS = nullptr;
 
     int         bHaveGeoTransform = false;
     double      adfGeoTransform[6]{0,0,0,0,0,0};
 
     int         nGCPCount = 0;
     GDAL_GCP   *pasGCPList = nullptr;
-    char       *pszGCPProjection = nullptr;
+    OGRSpatialReference* poGCP_SRS = nullptr;
 
     CPLString   osPhysicalFilename{};
     CPLString   osSubdatasetName{};
     CPLString   osAuxFilename{};
 
     int         bHasMetadata = false;
+
+    struct Statistics
+    {
+        bool bApproxStats;
+        double dfMin;
+        double dfMax;
+        double dfMean;
+        double dfStdDev;
+        GUInt64 nValidCount;
+    };
+    std::map<CPLString, Statistics> oMapMDArrayStatistics{};
 };
 //! @endcond
 
@@ -125,6 +137,12 @@ class CPL_DLL GDALPamDataset : public GDALDataset
     int         nPamFlags = 0;
     GDALDatasetPamInfo *psPam = nullptr;
 
+    virtual const char *_GetProjectionRef() override;
+    virtual const char *_GetGCPProjection() override;
+    virtual CPLErr _SetProjection( const char * pszProjection ) override;
+    virtual CPLErr _SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
+                    const char *pszGCPProjection ) override;
+
     virtual CPLXMLNode *SerializeToXML( const char *);
     virtual CPLErr      XMLInit( CPLXMLNode *, const char * );
 
@@ -133,6 +151,8 @@ class CPL_DLL GDALPamDataset : public GDALDataset
 
     CPLErr  TryLoadAux(char **papszSiblingFiles = nullptr);
     CPLErr  TrySaveAux();
+
+    void SerializeMDArrayStatistics(CPLXMLNode* psDSTree);
 
     virtual const char *BuildPamFilename();
 
@@ -150,17 +170,18 @@ class CPL_DLL GDALPamDataset : public GDALDataset
 
     void FlushCache(void) override;
 
-    const char *GetProjectionRef(void) override;
-    CPLErr SetProjection( const char * ) override;
+    const OGRSpatialReference* GetSpatialRef() const override;
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override;
 
     CPLErr GetGeoTransform( double * ) override;
     CPLErr SetGeoTransform( double * ) override;
 
     int GetGCPCount() override;
-    const char *GetGCPProjection() override;
+    const OGRSpatialReference* GetGCPSpatialRef() const override;
     const GDAL_GCP *GetGCPs() override;
+    using GDALDataset::SetGCPs;
     CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
-                    const char *pszGCPProjection ) override;
+                    const OGRSpatialReference* poSRS ) override;
 
     CPLErr SetMetadata( char ** papszMetadata,
                         const char * pszDomain = "" ) override;
@@ -173,6 +194,8 @@ class CPL_DLL GDALPamDataset : public GDALDataset
 
     char **GetFileList(void) override;
 
+    void ClearStatistics() override;
+
 //! @cond Doxygen_Suppress
     virtual CPLErr CloneInfo( GDALDataset *poSrcDS, int nCloneInfoFlags );
 
@@ -181,6 +204,18 @@ class CPL_DLL GDALPamDataset : public GDALDataset
                             int nListBands, int *panBandList,
                             GDALProgressFunc pfnProgress,
                             void * pProgressData ) override;
+
+    bool GetMDArrayStatistics( const char* pszMDArrayId,
+                               bool *pbApprox,
+                               double *pdfMin, double *pdfMax,
+                               double *pdfMean, double *pdfStdDev,
+                               GUInt64 *pnValidCount );
+
+    void StoreMDArrayStatistics( const char* pszMDArrayId,
+                                 bool bApprox,
+                                 double dfMin, double dfMax,
+                                 double dfMean, double dfStdDev,
+                                 GUInt64 nValidCount );
 
     // "semi private" methods.
     void   MarkPamDirty() { nPamFlags |= GPF_DIRTY; }
@@ -230,6 +265,8 @@ typedef struct {
 
     GDALRasterAttributeTable *poDefaultRAT;
 
+    bool           bOffsetSet;
+    bool           bScaleSet;
 } GDALRasterBandPamInfo;
 //! @endcond
 /* ******************************************************************** */
